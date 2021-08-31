@@ -1,21 +1,77 @@
-import { StatusBar } from "expo-status-bar";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StatusBar } from 'expo-status-bar';
+import React, { Component } from 'react';
+import { Text, View, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import firebase from 'firebase';
+import { firebaseConfig } from './src/firebase/config';
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+//Screens
+import LandingScreen from './src/screens/auth/LandingScreen';
+import RegisterScreen from './src/screens/auth/RegisterScreen';
+import LoginScreen from './src/screens/auth/LoginScreen';
+
+const Stack = createNativeStackNavigator();
+
+//Initializa firebase project
+if (firebase.apps.length === 0) {
+    firebase.initializeApp(firebaseConfig);
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+export default class App extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            loaded: false,
+            loggedIn: false,
+        };
+    }
+
+    componentDidMount() {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                this.setState({ loaded: true, loggedIn: false });
+            } else {
+                this.setState({ loaded: true, loggedIn: true });
+            }
+        });
+    }
+
+    render() {
+        const { loaded, loggedIn } = this.state;
+        if (!loaded) {
+            return (
+                <View>
+                    <Text>Loading ...</Text>
+                </View>
+            );
+        }
+
+        if (!loggedIn) {
+            return (
+                <NavigationContainer>
+                    <Stack.Navigator initialRouteName="Landing">
+                        <Stack.Screen
+                            name="Landing"
+                            component={LandingScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="Register"
+                            component={RegisterScreen}
+                        />
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                    </Stack.Navigator>
+                </NavigationContainer>
+            );
+        }
+
+        return (
+            <View>
+                <Text>Logged In as User</Text>
+            </View>
+        );
+    }
+}
+
+const styles = StyleSheet.create({});
